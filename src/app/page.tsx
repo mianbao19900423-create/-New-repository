@@ -58,7 +58,7 @@ export default function Home() {
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition");
       const match = disposition?.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)/i);
-      const name = match?.[1] ? decodeURIComponent(match[1]) : "captioned.mp4";
+      const name = match?.[1] ? decodeURIComponent(match[1]) : "export.mp4";
 
       setDownloadUrl(URL.createObjectURL(blob));
       setDownloadName(name);
@@ -72,10 +72,8 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-16">
       <header className="mb-12 text-center">
-        <h1 className="text-2xl font-medium tracking-tight">视频字幕</h1>
-        <p className="mt-2 text-sm text-neutral-500">
-          上传视频 → FFmpeg 处理 → 自动字幕 → 导出 MP4
-        </p>
+        <h1 className="text-2xl font-medium tracking-tight">视频转 MP4</h1>
+        <p className="mt-2 text-sm text-neutral-500">上传视频 → FFmpeg 转码 → 导出 MP4</p>
       </header>
 
       <section className="space-y-6">
@@ -105,7 +103,7 @@ export default function Home() {
             disabled={!file || status === "uploading"}
             className="flex-1 rounded-lg bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {status === "uploading" ? "处理中…" : "生成字幕并导出"}
+            {status === "uploading" ? "处理中…" : "导出 MP4"}
           </button>
           {(file || status === "done" || status === "error") && status !== "uploading" && (
             <button
@@ -120,7 +118,7 @@ export default function Home() {
 
         {status === "uploading" && (
           <p className="text-center text-xs text-neutral-500">
-            正在提取音频、识别语音并烧录字幕，请稍候…
+            正在处理视频，请稍候…
           </p>
         )}
 
@@ -139,9 +137,7 @@ export default function Home() {
         )}
       </section>
 
-      <footer className="mt-16 text-center text-xs text-neutral-400">
-        后端 API Route · FFmpeg · Whisper
-      </footer>
+      <footer className="mt-16 text-center text-xs text-neutral-400">后端 API Route · FFmpeg</footer>
     </main>
   );
 }

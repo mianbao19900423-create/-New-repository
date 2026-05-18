@@ -2,14 +2,7 @@ import { randomUUID } from "crypto";
 import { readFile, writeFile } from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  burnSubtitles,
-  cleanupFiles,
-  ensureTmpDir,
-  extractAudio,
-  TMP_DIR,
-} from "@/lib/ffmpeg";
-import { segmentsToSrt, transcribeAudio } from "@/lib/subtitles";
+import { cleanupFiles, ensureTmpDir, exportVideoToMp4, TMP_DIR } from "@/lib/ffmpeg";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -24,9 +17,7 @@ const ALLOWED_TYPES = new Set([
 
 export async function POST(request: NextRequest) {
   const id = randomUUID();
-  const audioPath = path.join(TMP_DIR, `${id}.wav`);
-  const srtPath = path.join(TMP_DIR, `${id}.srt`);
-  const outputPath = path.join(TMP_DIR, `${id}-captioned.mp4`);
+  const outputPath = path.join(TMP_DIR, `${id}-out.mp4`);
   let videoPath = "";
 
   try {
@@ -55,22 +46,17 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(videoPath, buffer);
 
-    await extractAudio(videoPath, audioPath);
-    const segments = await transcribeAudio(audioPath);
-    const srtContent = segmentsToSrt(segments);
-    await writeFile(srtPath, srtContent, "utf-8");
-
-    await burnSubtitles(videoPath, srtPath, outputPath);
+    await exportVideoToMp4(videoPath, outputPath);
 
     const outputBuffer = await readFile(outputPath);
-    const downloadName = `${path.parse(file.name).name || "video"}-captioned.mp4`;
+    const base = path.parse(file.name).name || "video";
+    const downloadName = `${base}-export.mp4`;
 
     return new NextResponse(outputBuffer, {
       status: 200,
       headers: {
         "Content-Type": "video/mp4",
         "Content-Disposition": `attachment; filename="${encodeURIComponent(downloadName)}"`,
-        "X-Subtitle-Segments": String(segments.length),
       },
     });
   } catch (error) {
@@ -78,8 +64,6 @@ export async function POST(request: NextRequest) {
     console.error("[process]", error);
     return NextResponse.json({ error: message }, { status: 500 });
   } finally {
-    await cleanupFiles(
-      [videoPath, audioPath, srtPath, outputPath].filter(Boolean)
-    );
+    await cleanupFiles([videoPath, outputPath].filter(Boolean));
   }
 }

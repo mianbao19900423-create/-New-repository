@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "视频字幕",
-  description: "上传视频，自动添加字幕并导出 MP4",
+  title: "视频转 MP4",
+  description: "上传视频，使用 FFmpeg 导出 MP4",
 };
 
 export default function RootLayout({

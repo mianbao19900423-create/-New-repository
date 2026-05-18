@@ -18,34 +18,26 @@ export async function ensureTmpDir(): Promise<string> {
   return TMP_DIR;
 }
 
-export function escapeSubtitlesPath(filePath: string): string {
-  return filePath.replace(/\\/g, "/").replace(/:/g, "\\:");
-}
-
-export function extractAudio(videoPath: string, audioPath: string): Promise<void> {
+/** Re-encode to H.264 + AAC MP4. */
+export function exportVideoToMp4(videoPath: string, outputPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
-      .noVideo()
-      .audioCodec("pcm_s16le")
-      .format("wav")
-      .on("end", () => resolve())
-      .on("error", reject)
-      .save(audioPath);
-  });
-}
-
-export function burnSubtitles(
-  videoPath: string,
-  srtPath: string,
-  outputPath: string
-): Promise<void> {
-  const escaped = escapeSubtitlesPath(srtPath);
-  const subtitleFilter = `subtitles='${escaped}':force_style='FontSize=22,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=3,Outline=2,Shadow=0,MarginV=48,Alignment=2'`;
-
-  return new Promise((resolve, reject) => {
-    ffmpeg(videoPath)
-      .outputOptions(["-c:v", "libx264", "-preset", "fast", "-crf", "23", "-c:a", "aac", "-b:a", "128k"])
-      .videoFilters(subtitleFilter)
+      .outputOptions([
+        "-map",
+        "0:v:0",
+        "-map",
+        "0:a:0?",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "23",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+      ])
       .on("end", () => resolve())
       .on("error", reject)
       .save(outputPath);
